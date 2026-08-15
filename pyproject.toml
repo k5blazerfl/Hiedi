@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hiedi"
+version = "0.1.0"
+description = "Hiedi — HeDE's local-first, cloud-on-consent project-planning assistant"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "GPL-2.0-or-later" }
+authors = [{ name = "k5blazerfl" }]
+dependencies = [
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+# The daemon speaks the session bus; the UI is PySide6. Both are optional so the
+# pure `hiedi.core` layer installs and unit-tests with no display and no bus.
+daemon = ["dbus-next>=0.2.3"]
+qt = ["PySide6>=6.5"]
+dev = ["pytest>=7"]
+
+[project.scripts]
+hiedid = "hiedi.daemon.__main__:main"
+hiedi = "hiedi.ui.__main__:main"
+hiedi-voyage = "hiedi.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["hiedi*"]
+
+[tool.setuptools.package-data]
+"hiedi.data" = ["*.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
