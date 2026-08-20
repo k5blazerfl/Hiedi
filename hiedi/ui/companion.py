@@ -17,11 +17,13 @@ import sys
 import time
 
 from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import QAction, QActionGroup
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
     QHBoxLayout,
     QLabel,
+    QMenu,
     QVBoxLayout,
     QWidget,
 )
@@ -116,6 +118,42 @@ class Companion(QWidget):
     def _on_dial(self, index: int) -> None:
         self._presence.level = PresenceLevel(self._dial.itemData(index))
         presence_mod.save(self._presence)
+
+    def toggle_dnd(self, on: bool | None = None) -> None:
+        """Flip Do Not Disturb (or set it explicitly) and persist."""
+        self._presence.dnd = (not self._presence.dnd) if on is None else bool(on)
+        presence_mod.save(self._presence)
+
+    # -- face right-click quick-controls (P2) ----------------------------------
+
+    def build_menu(self) -> QMenu:
+        """The mascot's right-click quick menu: presence tier, DND, send below deck."""
+        menu = QMenu(self)
+
+        presence = menu.addMenu("Presence")
+        group = QActionGroup(presence)
+        group.setExclusive(True)
+        for lvl, label in _LEVELS:
+            act = QAction(label, presence, checkable=True)
+            act.setChecked(lvl == self._presence.level)
+            act.triggered.connect(lambda _=False, l=lvl: self.set_level(l))
+            group.addAction(act)
+            presence.addAction(act)
+
+        menu.addSeparator()
+        dnd = QAction("Do Not Disturb", menu, checkable=True)
+        dnd.setChecked(self._presence.dnd)
+        dnd.toggled.connect(self.toggle_dnd)
+        menu.addAction(dnd)
+
+        menu.addSeparator()
+        below = QAction("Send below deck", menu)  # standalone: hide the companion
+        below.triggered.connect(self.hide)
+        menu.addAction(below)
+        return menu
+
+    def contextMenuEvent(self, event) -> None:  # noqa: N802 (Qt override)
+        self.build_menu().exec(event.globalPos())
 
 
 def _demo(companion: Companion) -> None:

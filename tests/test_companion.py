@@ -63,3 +63,23 @@ def test_dial_persists_presence(app, tmp_path, monkeypatch):
     c = Companion(Presence(level=PresenceLevel.ON_WATCH), clock=lambda: 0.0)
     c.set_level(PresenceLevel.AT_YOUR_SIDE)
     assert pm.load().level is PresenceLevel.AT_YOUR_SIDE
+
+
+def test_dnd_toggle_persists_and_silences(app, tmp_path, monkeypatch):
+    import hiedi.core.presence as pm
+    monkeypatch.setattr(pm, "config_path", lambda: tmp_path / "presence.yaml")
+    c = Companion(Presence(level=PresenceLevel.FIRST_MATE), clock=lambda: 0.0)
+    c.toggle_dnd(True)
+    assert pm.load().dnd is True
+    assert c.handle_notice(_notice()) is Presentation.POSE   # DND → pose only, no bubble
+
+
+def test_quick_menu_has_controls(app):
+    c = Companion(Presence(level=PresenceLevel.ON_DECK), clock=lambda: 0.0)
+    menu = c.build_menu()
+    texts = [a.text() for a in menu.actions()]
+    assert "Do Not Disturb" in texts and "Send below deck" in texts
+    # the Presence submenu marks the current tier as checked
+    submenu = next(a.menu() for a in menu.actions() if a.menu() is not None)
+    checked = [a.text() for a in submenu.actions() if a.isChecked()]
+    assert checked == ["On Deck"]
