@@ -1,9 +1,13 @@
-"""The mascot status widget — Hiedi's pose doubles as live agent status.
+"""Hiedi's pose as a widget — the reusable presence surface.
 
 Agent status maps to one of the canonical poses from the character bible
 (idle/thinking/success/concern). If a labelled PNG exists under ``hiedi/data/mascot/``
-it is shown; otherwise a tidy painted placeholder in Hiedi's teal is drawn so the app is
-never empty before the art lands.
+it is shown; otherwise a tidy painted placeholder in Hiedi's teal is drawn so the app
+is never empty before the art lands.
+
+``MascotImage`` is the bare pose (a sized pixmap) — reused by the summon panel, the
+companion, and (later) the floating companion / speech bubble. ``MascotWidget`` is
+that image plus a status caption, as the summon panel uses it.
 """
 
 from __future__ import annotations
@@ -57,10 +61,30 @@ def _load_pose(pose: str, size: int = 120) -> QPixmap:
     return _placeholder(pose, glyph, size)
 
 
+def caption_for(state: str) -> str:
+    """The status caption for an agent state (idle/thinking/success/concern)."""
+    return _STATE_POSE.get(state, _STATE_POSE["idle"])[2]
+
+
+class MascotImage(QLabel):
+    """Just Hiedi's pose, at a fixed size — the reusable presence surface."""
+
+    def __init__(self, size: int = 120, parent: QWidget | None = None) -> None:
+        super().__init__(parent, alignment=Qt.AlignCenter)
+        self._size = size
+        self.set_status("idle")
+
+    def set_status(self, state: str) -> None:
+        pose = _STATE_POSE.get(state, _STATE_POSE["idle"])[0]
+        self.setPixmap(_load_pose(pose, self._size))
+
+
 class MascotWidget(QWidget):
+    """The pose plus a status caption — as the summon panel shows it."""
+
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._img = QLabel(alignment=Qt.AlignCenter)
+        self._img = MascotImage(120)
         self._caption = QLabel(alignment=Qt.AlignCenter)
         self._caption.setWordWrap(True)
         self._caption.setStyleSheet("color: palette(mid);")
@@ -70,9 +94,8 @@ class MascotWidget(QWidget):
         self.set_status("idle")
 
     def set_status(self, state: str) -> None:
-        pose, _glyph, caption = _STATE_POSE.get(state, _STATE_POSE["idle"])
-        self._img.setPixmap(_load_pose(pose))
-        self._caption.setText(caption)
+        self._img.set_status(state)
+        self._caption.setText(caption_for(state))
 
 
-__all__ = ["MascotWidget"]
+__all__ = ["MascotImage", "MascotWidget", "caption_for"]
