@@ -1,0 +1,190 @@
+schema: hiedi.chart/0.1
+waypoints:
+- id: cast-off
+  title: Welcome Aboard
+- id: the-deck
+  title: Find Your Way Around
+- id: make-it-yours
+  title: Make It Yours
+- id: work-the-ship
+  title: Get Things Done
+- id: your-pilot
+  title: Meet Your Pilot
+- id: underway
+  title: You're Underway
+legs:
+
+# ---- Welcome Aboard ----------------------------------------------------------
+- id: hello
+  title: Say hello to Hiedi
+  waypoint: cast-off
+  status: active
+  estimate:
+    effort: ~1 min
+  produces:
+  - know the tour is yours — skip, pause, or resume anytime
+  notes: >-
+    Hiedi introduces herself: a harbor pilot who guides your ship into port and
+    never sails it for you. She makes clear up front that this tour is optional,
+    paced by you (Next / Skip), and resumable — it's just a Voyage in her list.
+
+# ---- Find Your Way Around ----------------------------------------------------
+- id: find-launcher
+  title: Open the launcher (⎈)
+  waypoint: the-deck
+  status: ready
+  after:
+  - hello
+  estimate:
+    effort: ~1 min
+  produces:
+  - found the Start menu + search
+  notes: >-
+    Bottom-left, where the Windows Start button lives. A two-pane classic menu:
+    pinned + recent apps and search on the left; your places, Control Center,
+    and Power on the right.
+- id: read-the-bar
+  title: Read the bar
+  waypoint: the-deck
+  status: ready
+  after:
+  - hello
+  produces:
+  - understand pins vs. applets, the clock, and where toasts appear
+  notes: >-
+    One glass bar. Apps and system applets (wifi, sound, battery, notifications)
+    live as pins in the same stream; only the clock is anchored, bottom-right.
+    Notifications slide in as toasts above it — that's where Hiedi speaks too.
+- id: open-notifications
+  title: Peek at notifications
+  waypoint: the-deck
+  status: todo
+  after:
+  - read-the-bar
+  notes: Optional. The notifications applet and its pullout, bottom-right.
+
+# ---- Make It Yours -----------------------------------------------------------
+- id: pin-an-app
+  title: Pin an app to the bar
+  waypoint: make-it-yours
+  status: todo
+  after:
+  - find-launcher
+  produces:
+  - one app pinned; learned right-click jump lists
+  notes: >-
+    From the launcher, right-click an app → Pin. Right-click a pin for its jump
+    list. Reorder and organize later in the Manifest window.
+- id: pick-a-world
+  title: Pick a world
+  waypoint: make-it-yours
+  status: todo
+  after:
+  - read-the-bar
+  produces:
+  - chosen biome; accent + wallpaper + boot theme retinted to match
+  notes: >-
+    Worlds/biomes: Harbor (default), Emberforge, Mistreef, Palmshore, Stormwatch.
+    Picking one retints the whole desktop — and the boot splash follows it.
+- id: set-wallpaper
+  title: Set your wallpaper
+  waypoint: make-it-yours
+  status: todo
+  after:
+  - read-the-bar
+  notes: >-
+    Optional. Your desktop background stays yours — a world sets an accent, not a
+    lock on your wallpaper.
+
+# ---- Get Things Done ---------------------------------------------------------
+- id: open-control-center
+  title: Open Control Center
+  waypoint: work-the-ship
+  status: todo
+  after:
+  - find-launcher
+  produces:
+  - know where settings live
+  notes: >-
+    GeST, on the launcher's right rail exactly where the Windows Control Panel
+    sits. Every system and appearance setting lives here.
+- id: open-files
+  title: Open your files
+  waypoint: work-the-ship
+  status: todo
+  after:
+  - find-launcher
+  notes: Seahorse, the HeDE file manager — your Home, Pictures, Music, and drives.
+- id: open-hatch
+  title: Drop the Hatch (F12)
+  waypoint: work-the-ship
+  status: todo
+  after:
+  - read-the-bar
+  notes: Optional, for terminal folks — F12 drops a quake-style terminal.
+- id: check-updates
+  title: Check for updates
+  waypoint: work-the-ship
+  status: todo
+  after:
+  - open-control-center
+  notes: Optional. The Software module keeps your Gentoo system current.
+
+# ---- Meet Your Pilot ---------------------------------------------------------
+- id: what-is-a-voyage
+  title: Learn what a Voyage is
+  waypoint: your-pilot
+  status: ready
+  after:
+  - hello
+  produces:
+  - understand Voyage / Chart / Logbook — plans you own as plain files
+  notes: >-
+    The plan is the product, not the chat. A Voyage is a folder of plain files
+    you own; this very tour is one. Not just for software — a remodel, a trip, or
+    a thesis all work the same way.
+- id: adjust-hiedi
+  title: Set how present Hiedi is
+  waypoint: your-pilot
+  status: ready
+  after:
+  - hello
+  produces:
+  - know the presence dial — and how to send her below deck
+  notes: >-
+    The step that respects you: the presence dial. On Watch (default, a quiet bar
+    applet) → On Deck → At Your Side → First Mate. Here's how to turn her down,
+    send her below deck entirely, or end this tour — no hard feelings.
+- id: about-the-brain
+  title: Turn on Hiedi's AI (optional)
+  waypoint: your-pilot
+  status: todo
+  after:
+  - what-is-a-voyage
+  notes: >-
+    Optional. Everything so far worked with no AI. If your hardware's up for it, a
+    local brain (Ollama — private and offline) lets her draft and chat; Claude is
+    an opt-in, per-Voyage, cloud-on-consent pilot. Off by default.
+- id: start-your-voyage
+  title: Start your first Voyage
+  waypoint: your-pilot
+  status: todo
+  after:
+  - what-is-a-voyage
+  produces:
+  - one real Voyage of your own
+  notes: Name something you're actually building; Hiedi helps you chart it.
+
+# ---- You're Underway ---------------------------------------------------------
+- id: recap
+  title: You're underway
+  waypoint: underway
+  status: todo
+  after:
+  - pin-an-app
+  - open-control-center
+  - adjust-hiedi
+  - start-your-voyage
+  notes: >-
+    Recap what you've learned, point to where help lives, and leave this tour in
+    Hiedi's list for reference. Marking this done = the Voyage arrives.

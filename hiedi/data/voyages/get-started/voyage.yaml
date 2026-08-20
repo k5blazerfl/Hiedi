@@ -1,0 +1,19 @@
+schema: hiedi.voyage/0.1
+id: get-started
+title: Get to Know HeDE
+kind: onboarding
+destination: >-
+  Feel at home on your new HeDE desktop — find your way around, make it yours,
+  and meet Hiedi.
+success:
+- You can find and launch anything
+- The desktop looks the way you want it
+- You know how to adjust or dismiss Hiedi
+- You've started a Voyage of your own
+status: active
+tags:
+- onboarding
+- hede
+crew:
+- hiedi
+cloud: never

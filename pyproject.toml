@@ -30,7 +30,7 @@ hiedi-voyage = "hiedi.cli:main"
 include = ["hiedi*"]
 
 [tool.setuptools.package-data]
-"hiedi.data" = ["*.md"]
+"hiedi.data" = ["*.md", "voyages/*/*.yaml", "voyages/*/*.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
