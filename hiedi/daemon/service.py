@@ -9,9 +9,11 @@ that unblocks a prompt.
 Interface (``org.hede.hiedi.Assistant``):
 
 * methods: ``OpenVoyage(s)->s``, ``ListVoyages()->s``, ``DraftChart(s)->s``,
-  ``ToggleLeg(ssb? )`` ... (JSON payloads), ``RespondPermission(ss)->b``.
+  ``ToggleLeg(ssb)``, ``Chat(ss)`` (JSON payloads), ``RespondPermission(ss)->b``,
+  ``SweepNotices()->s`` (the periodic standing pass).
 * signals: ``Status(s)`` (idle|thinking|success|concern), ``Token(s)`` (streamed),
-  ``AskPermission(ssssbb)`` (request_id, tool, summary, detail, mutates, reversible).
+  ``AskPermission(ssssbb)`` (request_id, tool, summary, detail, mutates, reversible),
+  ``Notice(ssssss)`` (kind, voyage, title, body, leg, waypoint) — plan-state events.
 """
 
 from __future__ import annotations
@@ -26,8 +28,10 @@ from ..core import store
 from ..core.agent import AgentEngine
 from ..core.agent.permissions import Decision
 from ..core.brain import ClaudeBrain, OllamaBrain, Router
+from ..core.model import Chart
 from . import BUS_NAME, INTERFACE, OBJECT_PATH
 from .bridge import PromptBridge
+from .notice_bridge import NoticeBridge
 
 _DECISIONS = {
     "deny": Decision.DENY,
@@ -55,6 +59,7 @@ def build_interface():
             self._router = Router(OllamaBrain(), ClaudeBrain())
             self._bridge = PromptBridge(self._emit_ask)
             self._engine = AgentEngine(self._router, asker=self._bridge.asker)
+            self._notices = NoticeBridge(self._emit_notice)
 
         # -- signal plumbing -------------------------------------------------
 
@@ -63,6 +68,12 @@ def build_interface():
             self._loop.call_soon_threadsafe(
                 self.AskPermission, request_id, req.tool, req.summary,
                 req.detail, req.mutates, req.reversible)
+
+        def _emit_notice(self, kind: str, voyage: str, title: str,
+                         body: str, leg: str, waypoint: str) -> None:
+            # The NoticeBridge may run on the loop thread or a worker; hop uniformly.
+            self._loop.call_soon_threadsafe(
+                self.Notice, kind, voyage, title, body, leg, waypoint)
 
         def _set_status(self, state: str) -> None:
             self._loop.call_soon_threadsafe(self.Status, state)
@@ -95,12 +106,16 @@ def build_interface():
         @method()
         def OpenVoyage(self, ref: "s") -> "s":  # noqa: F821
             loaded = store.find_voyage(ref)
+            self._notices.on_open(loaded)          # surface this Voyage's standing notices
             return json.dumps(_chart_json(loaded))
 
         @method()
         async def DraftChart(self, ref: "s") -> "s":  # noqa: F821
             loaded = store.find_voyage(ref)
+            before = Chart.from_dict(loaded.chart.to_dict())   # snapshot before the mutation
             res = await self._run(self._engine.draft_chart, loaded)
+            if res.applied:
+                self._notices.on_mutation(before, loaded.chart, loaded.voyage.id)
             return json.dumps({
                 "applied": res.applied, "message": res.message,
                 "brain": res.decision.brain, "model": res.decision.model,
@@ -111,7 +126,10 @@ def build_interface():
         @method()
         async def ToggleLeg(self, ref: "s", leg: "s", done: "b") -> "s":  # noqa: F821
             loaded = store.find_voyage(ref)
+            before = Chart.from_dict(loaded.chart.to_dict())   # snapshot before the mutation
             res = await self._run(partial(self._engine.toggle_leg, loaded, leg, done=done))
+            if res.applied:
+                self._notices.on_mutation(before, loaded.chart, loaded.voyage.id)
             return json.dumps({
                 "applied": res.applied, "message": res.message,
                 "milestones": res.milestones,
@@ -130,6 +148,12 @@ def build_interface():
             d = _DECISIONS.get(decision, Decision.DENY)
             return self._bridge.respond(request_id, d)
 
+        @method()
+        def SweepNotices(self) -> "s":  # noqa: F821
+            # The periodic standing pass (drift/long-lead) across all Voyages; a
+            # client (or a future timer) drives cadence. De-dup lives in the bridge.
+            return json.dumps({"emitted": self._notices.sweep()})
+
         # -- signals ---------------------------------------------------------
 
         @signal()
@@ -144,6 +168,13 @@ def build_interface():
         def AskPermission(self, request_id: "s", tool: "s", summary: "s",  # noqa: F821
                           detail: "s", mutates: "b", reversible: "b") -> "ssssbb":  # noqa: F821
             return [request_id, tool, summary, detail, mutates, reversible]
+
+        @signal()
+        def Notice(self, kind: "s", voyage: "s", title: "s",  # noqa: F821
+                   body: "s", leg: "s", waypoint: "s") -> "ssssss":  # noqa: F821
+            # A plan-state event worth surfacing (Voyage-only for v1). leg/waypoint
+            # are "" when not applicable. See hiedi.core.notices.
+            return [kind, voyage, title, body, leg, waypoint]
 
     return HiediInterface
 
