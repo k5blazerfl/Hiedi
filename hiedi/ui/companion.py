@@ -42,6 +42,18 @@ _LEVELS = [
 ]
 
 
+def notice_from_signal(kind: str, voyage: str, title: str, body: str = "",
+                       leg: str = "", waypoint: str = ""):
+    """Reconstruct a Notice from the daemon's ``Notice(ssssss)`` signal arguments.
+
+    The seam the D-Bus companion adapter uses: the daemon emits six strings, this
+    turns them back into a :class:`~hiedi.core.notices.Notice` (empty leg/waypoint →
+    None) for the presenter.
+    """
+    from ..core.notices import Notice, NoticeKind
+    return Notice(NoticeKind(kind), voyage, title, body, leg or None, waypoint or None)
+
+
 class Companion(QWidget):
     """The companion surface: mascot + presence dial, rendering Notices."""
 
