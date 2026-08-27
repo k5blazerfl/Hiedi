@@ -5,8 +5,8 @@ from __future__ import annotations
 import os
 import threading
 
-from hiedi.pet.bridge import STATUS_MOOD, clamp_speech, status_to_mood
-from hiedi.pet.channel import PetChannel, default_path
+from hiedi.pet.bridge import STATUS_MOOD, clamp_speech, parse_events, status_to_mood
+from hiedi.pet.channel import PetChannel, default_path, event_default_path
 
 
 # -- mapping (pure) ------------------------------------------------------------
@@ -52,6 +52,32 @@ def test_empty_say_is_dropped(tmp_path):
 def test_default_path_honors_xdg(monkeypatch, tmp_path):
     monkeypatch.setenv("XDG_RUNTIME_DIR", str(tmp_path))
     assert default_path() == tmp_path / "hiedi-pet.ctl"
+    assert event_default_path() == tmp_path / "hiedi-pet.evt"
+
+
+# -- events (body → brain, pure parse) -----------------------------------------
+
+def test_parse_events_splits_lines():
+    events, rem = parse_events(b"poke\ngrab\n")
+    assert events == ["poke", "grab"]
+    assert rem == b""
+
+
+def test_parse_events_keeps_partial_line():
+    events, rem = parse_events(b"poke\npo")
+    assert events == ["poke"]
+    assert rem == b"po"                       # completed by the next read
+
+
+def test_parse_events_ignores_blank_lines():
+    events, _ = parse_events(b"\n\npoke\n\n")
+    assert events == ["poke"]
+
+
+def test_parse_events_the_bytes_xpet_writes():
+    # exactly what xpet's emit_event() puts on the wire for a right-click
+    events, rem = parse_events(b"poke\n")
+    assert events == ["poke"] and rem == b""
 
 
 # -- channel (real FIFO round-trip — the exact bytes xpet parses) --------------
@@ -78,6 +104,25 @@ def test_channel_writes_protocol_lines(tmp_path):
         assert got == "say Woof — Hiedi online.\nmood happy\n".encode("utf-8")
     finally:
         os.close(reader)
+
+
+def test_event_fifo_roundtrip(tmp_path):
+    """The bridge owns/creates the event FIFO; the pet's `poke\\n` reads back."""
+    from hiedi.pet.bridge import _open_event_fifo, parse_events
+
+    path = tmp_path / "pet.evt"
+    rfd = _open_event_fifo(path)          # bridge side: create + open reader
+    try:
+        assert path.is_fifo()
+        wfd = os.open(path, os.O_WRONLY | os.O_NONBLOCK)  # xpet side
+        try:
+            os.write(wfd, b"poke\n")
+        finally:
+            os.close(wfd)
+        events, rem = parse_events(os.read(rfd, 4096))
+        assert events == ["poke"] and rem == b""
+    finally:
+        os.close(rfd)
 
 
 def test_channel_write_does_not_block(tmp_path):

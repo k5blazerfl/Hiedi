@@ -18,7 +18,7 @@ from pathlib import Path
 
 
 def default_path() -> Path:
-    """Where xpet listens by default — mirror its own resolution order.
+    """Where xpet listens for commands — mirror its own resolution order.
 
     ``$XDG_RUNTIME_DIR/hiedi-pet.ctl``, falling back to ``/tmp/hiedi-pet-<uid>.ctl``.
     """
@@ -26,6 +26,17 @@ def default_path() -> Path:
     if rt:
         return Path(rt) / "hiedi-pet.ctl"
     return Path(f"/tmp/hiedi-pet-{os.getuid()}.ctl")
+
+
+def event_default_path() -> Path:
+    """Where the pet reports interactions (``poke`` …) — the brain reads this.
+
+    ``$XDG_RUNTIME_DIR/hiedi-pet.evt``, falling back to ``/tmp/hiedi-pet-<uid>.evt``.
+    """
+    rt = os.environ.get("XDG_RUNTIME_DIR")
+    if rt:
+        return Path(rt) / "hiedi-pet.evt"
+    return Path(f"/tmp/hiedi-pet-{os.getuid()}.evt")
 
 
 def _one_line(text: str) -> str:
@@ -69,4 +80,4 @@ class PetChannel:
         return self._write("quit")
 
 
-__all__ = ["PetChannel", "default_path"]
+__all__ = ["PetChannel", "default_path", "event_default_path"]
