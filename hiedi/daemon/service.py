@@ -11,6 +11,7 @@ Interface (``org.hede.hiedi.Assistant``):
 * methods: ``OpenVoyage(s)->s``, ``ListVoyages()->s``, ``DraftChart(s)->s``,
   ``ToggleLeg(ssb? )`` ... (JSON payloads), ``RespondPermission(ss)->b``.
 * signals: ``Status(s)`` (idle|thinking|success|concern), ``Token(s)`` (streamed),
+  ``Say(s)`` (a line for the desktop pet to speak),
   ``AskPermission(ssssbb)`` (request_id, tool, summary, detail, mutates, reversible).
 """
 
@@ -122,6 +123,7 @@ def build_interface():
         async def Chat(self, ref: "s", text: "s") -> "s":  # noqa: F821
             loaded = store.find_voyage(ref)
             reply, decision = await self._run(partial(self._engine.chat, loaded, text))
+            self.Say(reply.content)  # give Hiedi's voice to the desktop pet
             return json.dumps({"content": reply.content, "brain": decision.brain,
                                "model": decision.model, "reason": decision.reason})
 
@@ -138,6 +140,11 @@ def build_interface():
 
         @signal()
         def Token(self, text: "s") -> "s":  # noqa: F821
+            return text
+
+        @signal()
+        def Say(self, text: "s") -> "s":  # noqa: F821
+            """Hiedi's voice — a line for the desktop pet to speak."""
             return text
 
         @signal()
