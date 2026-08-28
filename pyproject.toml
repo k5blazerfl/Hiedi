@@ -24,6 +24,8 @@ dev = ["pytest>=7"]
 [project.scripts]
 hiedid = "hiedi.daemon.__main__:main"
 hiedi = "hiedi.ui.__main__:main"
+hiedi-companion = "hiedi.ui.companion:main"
+hiedi-pet = "hiedi.pet.bridge:run"
 hiedi-voyage = "hiedi.cli:main"
 
 [tool.setuptools.packages.find]
