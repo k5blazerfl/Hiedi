@@ -75,6 +75,11 @@ class PetChannel:
         """Set the pet's mood pose (``idle`` / ``happy`` / ``sleeping``)."""
         return self._write(f"mood {mood}")
 
+    def notify(self, text: str) -> bool:
+        """Present ``text`` as a standalone notification card + run-in choreography."""
+        text = _one_line(text)
+        return self._write(f"notify {text}") if text else False
+
     def quit(self) -> bool:
         """Ask the pet to exit."""
         return self._write("quit")

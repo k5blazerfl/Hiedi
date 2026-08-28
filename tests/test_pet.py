@@ -7,6 +7,7 @@ import threading
 
 from hiedi.pet.bridge import STATUS_MOOD, clamp_speech, parse_events, status_to_mood
 from hiedi.pet.channel import PetChannel, default_path, event_default_path
+from hiedi.pet.notifications import format_notification
 
 
 # -- mapping (pure) ------------------------------------------------------------
@@ -78,6 +79,28 @@ def test_parse_events_the_bytes_xpet_writes():
     # exactly what xpet's emit_event() puts on the wire for a right-click
     events, rem = parse_events(b"poke\n")
     assert events == ["poke"] and rem == b""
+
+
+# -- notifications presenter (pure formatting) ---------------------------------
+
+def test_format_notification_app_summary_body():
+    assert format_notification("Konsole", "Build done", "0 errors") == \
+        "Konsole: Build done — 0 errors"
+
+
+def test_format_notification_drops_redundant_app():
+    # app name already in the summary → don't repeat it
+    assert format_notification("Discord", "Discord: new message", "") == \
+        "Discord: new message"
+
+
+def test_format_notification_collapses_whitespace_and_truncates():
+    out = format_notification("", "x" * 300, "", limit=20)
+    assert len(out) == 20 and out.endswith("…")
+
+
+def test_format_notification_body_only():
+    assert format_notification("", "", "just a body") == "just a body"
 
 
 # -- channel (real FIFO round-trip — the exact bytes xpet parses) --------------

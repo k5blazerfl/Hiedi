@@ -121,6 +121,16 @@ async def _serve(channel: PetChannel, *, retries: int = 60) -> None:
 
     loop.add_reader(evt_fd, on_event_readable)
 
+    # present desktop notifications through the pet (gated by Do Not Disturb)
+    async def _notifications() -> None:
+        from ..core import presence as presence_mod
+        from .notifications import monitor_notifications
+        try:
+            await monitor_notifications(channel, dnd_getter=lambda: presence_mod.load().dnd)
+        except Exception as e:  # a monitor failure must not take down the bridge
+            print(f"hiedi-pet: notification monitor unavailable: {e}")
+    loop.create_task(_notifications())
+
     channel.mood("idle")
     channel.say("Hiedi online.")
     print(f"hiedi-pet: bridging {BUS_NAME} → {channel.path}")
